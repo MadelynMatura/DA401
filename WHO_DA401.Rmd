@@ -1,0 +1,283 @@
+---
+title: "WHO_DA 401 Project.Rmd"
+author: "Maddy Matura"
+date: "February 29, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+install.packages(devtools)
+library(devtools)
+install_github("expersso/WHO")
+```
+
+```{r}
+library(WHO)
+
+```
+
+```{r}
+codes <- get_codes(extra= TRUE)
+head(codes)
+```
+
+```{r}
+View(codes)
+```
+
+```{r}
+mental_health <- codes[grepl("[Mm]ental", codes$display), ]
+```
+
+```{r}
+mortality <- codes[grepl("[Mm]ortality", codes$display), ]
+```
+
+```{r}
+browseURL(codes$url[1])
+```
+
+```{r}
+df <- get_data("WHOSIS_000001")
+```
+
+```{r}
+expenditures <- codes[grepl("expend", codes$display), ]
+```
+
+```{r}
+GDP <- codes[grepl("GDP", codes$display), ]
+```
+
+```{r}
+GDP_df <- get_data("GHED_CHEGDP_SHA2011")
+```
+
+```{r}
+population <- codes[grepl("population", codes$display), ]
+```
+
+```{r}
+system_type <- codes[grepl("Health systems", codes$category), ]
+```
+
+```{r}
+public_df <- get_data("MEDS8021201")
+```
+
+```{r}
+private_df <- get_data("MEDS8021202")
+```
+
+```{r}
+population_df <- get_data("MEDS1_01_01") #not working...weird, but also no URL so maybe that's the propblem
+```
+
+```{r}
+GDP_df <- get_data("MEDS1_01_03")
+```
+
+```{r}
+well_being<- codes[grepl("index", codes$display), ]
+```
+
+```{r}
+service_coverage_df <- get_data("UHC_INDEX_REPORTED") 
+```
+
+```{r}
+composite_coverage_df <- get_data("cci2030")
+```
+
+```{r}
+sys<- codes[grepl("national health", codes$display), ] 
+```
+
+```{r}
+sys_df <- get_data("HSS_COMPREHENSIVEHEALTHPOLICY")
+
+```
+
+```{r}
+GHE<- codes[grepl("GHE", codes$display), ] 
+```
+
+
+#Export this data table (GHE per GDP)
+```{r}
+GHE_percent_GDP <- get_data("GHED_GGHE-DGDP_SHA2011")
+```
+
+#Export this data table (Govenrment spending per capita in USD)
+```{r}
+Spending_per_capita_USD<- get_data("GHED_GGHE-D_pc_US_SHA2011")
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+
+
+```
+
+
+
+
+#Export to excel: GHE percent GDP 2017
+```{r}
+GHE_percent_GDP16 <- GHE_percent_GDP %>%
+  filter(year == "2016")
+GHE_percent_GDP16 <- subset(GHE_percent_GDP16, select = c(worldbankincomegroup, year,region, country, value))
+GHE_percent_GDP16_noNA <- GHE_percent_GDP16 %>% drop_na()
+GHE_percent_GDP16_noNA = rename(GHE_percent_GDP16_noNA, GHE_percent = value)
+```
+#Export to excel: GHE percent GDP 2017
+```{r}
+
+Spending_per_capita_USD16 <- Spending_per_capita_USD %>%
+  filter(year == "2016")
+Spending_per_capita_USD16<- subset(Spending_per_capita_USD16, select = c(worldbankincomegroup, year,region, country, value))
+
+Spending_per_capita_USD16_noNA <- Spending_per_capita_USD16 %>% drop_na()
+
+Spending_per_capita_USD16_noNA = rename(Spending_per_capita_USD16_noNA, Spending_per_capita = value)
+```
+
+```{r}
+Total <- merge(Spending_per_capita_USD16_noNA, GHE_percent_GDP16_noNA, by= "country")
+```
+
+```{r}
+Total <- subset(Total, select = c(country, worldbankincomegroup.x, year.x, region.x, Spending_per_capita, GHE_percent))
+
+```
+
+
+```{r}
+
+Total = rename(Total, worldbankincomegroup = worldbankincomegroup.x)
+Total = rename(Total, year = year.x)
+Total= rename(Total, region= region.x)
+```
+
+
+
+#Mortality
+```{r}
+Mort <- codes[grepl("[Mm]ortality", codes$display), ] 
+```
+
+```{r}
+Mort_df <- get_data("WHOSIS_000004")
+```
+#Export Adulty Mortality per 1000 people per country in 2016
+```{r}
+Adult_Mort_2016 <- Mort_df %>%
+  filter(year == "2016", sex== "Both sexes")
+
+
+```
+
+```{r}
+library(tidyr)
+Adult_Mort_2016_noNA <- Adult_Mort_2016 %>% drop_na()
+
+Adult_Mort_2016_noNA = rename(Adult_Mort_2016_noNA, Adult_mort = value)
+```
+
+```{r}
+Total <- merge(Total, Adult_Mort_2016_noNA, by= "country")
+```
+
+```{r}
+Total <- subset(Total, select = c(country, worldbankincomegroup, year.x, region.x, Spending_per_capita, GHE_percent, Adult_mort))
+```
+
+
+
+```{r}
+Total = rename(Total, year = year.x)
+Total= rename(Total, region= region.x)
+
+```
+
+```{r}
+Total = rename(Total, Income_Group = worldbankincomegroup)
+```
+
+```{r}
+library(ggplot2)
+```
+
+```{r}
+hist1 <-ggplot(data=Total, aes(Total$region)) + 
+  geom_histogram(stat="count", fill= "red") + labs(x= "Regions", y= "Count", title= "Distribution of Region Counts" ) + theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+hist1
+```
+
+```{r}
+hist2 <-ggplot(data=Total, aes(Total$Income_Group)) + 
+  geom_histogram(stat="count", fill = "blue") + labs(x= "Income Groups", y = "Count", title = "Distribution of Income Group Counts") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+hist2
+```
+
+
+
+```{r}
+plot1 <- ggplot(Total,aes( Spending_per_capita, Adult_mort)) + geom_point(aes(col=Income_Group)) + labs(y= "Adult Mortality Rate per 1000 people", x= "Government Healthcare Spending per Capita", title= "Adult Mortality Rate by Government Health Spending per Capita") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+plot1
+```
+
+```{r}
+plot2 <- ggplot(Total,aes(GHE_percent, Adult_mort)) + geom_point(col= "red") + geom_smooth(method= "lm") + labs(y="Adult Mortality rate per 1000 people", x="Percent GDP Allocated to Government Health Expenditures", title = "Government Health Expenditures and Adult Mortality Rates") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+plot2
+```
+
+```{r}
+lm1 <-lm(Adult_mort ~ GHE_percent, data = Total)
+```
+
+```{r}
+summary(lm1)
+```
+
+
+
+```{r}
+write.csv(Total,"Total.csv")
+```
+
+
+
+#Health Indices
+#Physical Burden Index: Necessary Information
+#Ischemic Heart Disease/100,000:2017
+```{r}
+IHD<- codes[grepl("[Hh]eart", codes$display), ] 
+```
+
+```{r}
+IHD_df <- get_data("SA_0000001425")
+```
+
+```{r}
+IHD_2017 <- IHD_df %>%
+  filter(year == "2017")
+```
+
