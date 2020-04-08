@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
+#Install WHO package created by expersso
 install.packages(devtools)
 library(devtools)
 install_github("expersso/WHO")
@@ -21,6 +22,7 @@ library(WHO)
 ```
 
 ```{r}
+#look at all codes available (represent health indicators recorded by WHO)
 codes <- get_codes(extra= TRUE)
 head(codes)
 ```
@@ -30,6 +32,7 @@ View(codes)
 ```
 
 ```{r}
+#Exploratory searching for various indicators
 mental_health <- codes[grepl("[Mm]ental", codes$display), ]
 ```
 
@@ -42,26 +45,32 @@ browseURL(codes$url[1])
 ```
 
 ```{r}
+#Create df of desired indicator
 df <- get_data("WHOSIS_000001")
 ```
 
 ```{r}
+#Look at indicators with the word expenditures
 expenditures <- codes[grepl("expend", codes$display), ]
 ```
 
 ```{r}
+#look at indicators with the word GDP
 GDP <- codes[grepl("GDP", codes$display), ]
 ```
 
 ```{r}
+#Create GDP dataframe
 GDP_df <- get_data("GHED_CHEGDP_SHA2011")
 ```
 
 ```{r}
+#Search for indicators with the word population
 population <- codes[grepl("population", codes$display), ]
 ```
 
 ```{r}
+#Searh for indicators with the words Health systems
 system_type <- codes[grepl("Health systems", codes$category), ]
 ```
 
@@ -74,7 +83,7 @@ private_df <- get_data("MEDS8021202")
 ```
 
 ```{r}
-population_df <- get_data("MEDS1_01_01") #not working...weird, but also no URL so maybe that's the propblem
+population_df <- get_data("MEDS1_01_01") #not working because there is no URL associated with this code, so API does not work if there is no URL associated
 ```
 
 ```{r}
@@ -114,7 +123,7 @@ GHE_percent_GDP <- get_data("GHED_GGHE-DGDP_SHA2011")
 
 #Export this data table (Govenrment spending per capita in USD)
 ```{r}
-Spending_per_capita_USD<- get_data("GHED_GGHE-D_pc_US_SHA2011")
+Spending_per_capita_USD<- get_data("GHED_GGHE-D_pc_US_SHA2011") #Spending per capita in USD for each country
 ```
 
 ```{r}
@@ -127,39 +136,39 @@ library(tidyr)
 
 
 
-#Export to excel: GHE percent GDP 2017
+#Export to excel: GHE percent GDP 2016
 ```{r}
 GHE_percent_GDP16 <- GHE_percent_GDP %>%
-  filter(year == "2016")
-GHE_percent_GDP16 <- subset(GHE_percent_GDP16, select = c(worldbankincomegroup, year,region, country, value))
-GHE_percent_GDP16_noNA <- GHE_percent_GDP16 %>% drop_na()
-GHE_percent_GDP16_noNA = rename(GHE_percent_GDP16_noNA, GHE_percent = value)
+  filter(year == "2016")  #filter for 2016
+GHE_percent_GDP16 <- subset(GHE_percent_GDP16, select = c(worldbankincomegroup, year,region, country, value))  #select desired columns (income group, year, region, country, value)
+GHE_percent_GDP16_noNA <- GHE_percent_GDP16 %>% drop_na()  #get rid of NA
+GHE_percent_GDP16_noNA = rename(GHE_percent_GDP16_noNA, GHE_percent = value) #rename columns
 ```
-#Export to excel: GHE percent GDP 2017
+#Export to excel: Spending per capita 2016
 ```{r}
 
 Spending_per_capita_USD16 <- Spending_per_capita_USD %>%
-  filter(year == "2016")
-Spending_per_capita_USD16<- subset(Spending_per_capita_USD16, select = c(worldbankincomegroup, year,region, country, value))
+  filter(year == "2016")  #filter for 2016 only
+Spending_per_capita_USD16<- subset(Spending_per_capita_USD16, select = c(worldbankincomegroup, year,region, country, value)) #subset with desired columns
 
-Spending_per_capita_USD16_noNA <- Spending_per_capita_USD16 %>% drop_na()
+Spending_per_capita_USD16_noNA <- Spending_per_capita_USD16 %>% drop_na() #drop na
 
-Spending_per_capita_USD16_noNA = rename(Spending_per_capita_USD16_noNA, Spending_per_capita = value)
+Spending_per_capita_USD16_noNA = rename(Spending_per_capita_USD16_noNA, Spending_per_capita = value)  #rename columns
 ```
 
 ```{r}
-Total <- merge(Spending_per_capita_USD16_noNA, GHE_percent_GDP16_noNA, by= "country")
+Total <- merge(Spending_per_capita_USD16_noNA, GHE_percent_GDP16_noNA, by= "country") #merge dataframes to get total
 ```
 
 ```{r}
-Total <- subset(Total, select = c(country, worldbankincomegroup.x, year.x, region.x, Spending_per_capita, GHE_percent))
+Total <- subset(Total, select = c(country, worldbankincomegroup.x, year.x, region.x, Spending_per_capita, GHE_percent)) #pull out desired columns
 
 ```
 
 
 ```{r}
 
-Total = rename(Total, worldbankincomegroup = worldbankincomegroup.x)
+Total = rename(Total, worldbankincomegroup = worldbankincomegroup.x)  #rename all columns
 Total = rename(Total, year = year.x)
 Total= rename(Total, region= region.x)
 ```
@@ -168,45 +177,45 @@ Total= rename(Total, region= region.x)
 
 #Mortality
 ```{r}
-Mort <- codes[grepl("[Mm]ortality", codes$display), ] 
+Mort <- codes[grepl("[Mm]ortality", codes$display), ]   #search for mortality health indicator
 ```
 
 ```{r}
-Mort_df <- get_data("WHOSIS_000004")
+Mort_df <- get_data("WHOSIS_000004")   #make the mortality indicator into df
 ```
 #Export Adulty Mortality per 1000 people per country in 2016
 ```{r}
-Adult_Mort_2016 <- Mort_df %>%
-  filter(year == "2016", sex== "Both sexes")
+Adult_Mort_2016 <- Mort_df %>% 
+  filter(year == "2016", sex== "Both sexes") #filter by 2016 and both sexes
 
 
 ```
 
 ```{r}
 library(tidyr)
-Adult_Mort_2016_noNA <- Adult_Mort_2016 %>% drop_na()
+Adult_Mort_2016_noNA <- Adult_Mort_2016 %>% drop_na()  #drop na
 
-Adult_Mort_2016_noNA = rename(Adult_Mort_2016_noNA, Adult_mort = value)
+Adult_Mort_2016_noNA = rename(Adult_Mort_2016_noNA, Adult_mort = value) #rename columns
 ```
 
 ```{r}
-Total <- merge(Total, Adult_Mort_2016_noNA, by= "country")
+Total <- merge(Total, Adult_Mort_2016_noNA, by= "country") #merge mortality index into total df
 ```
 
 ```{r}
-Total <- subset(Total, select = c(country, worldbankincomegroup, year.x, region.x, Spending_per_capita, GHE_percent, Adult_mort))
+Total <- subset(Total, select = c(country, worldbankincomegroup, year.x, region.x, Spending_per_capita, GHE_percent, Adult_mort))    #select desired columns
 ```
 
 
 
-```{r}
-Total = rename(Total, year = year.x)
+```{r}  
+Total = rename(Total, year = year.x)   #rename
 Total= rename(Total, region= region.x)
 
 ```
 
 ```{r}
-Total = rename(Total, Income_Group = worldbankincomegroup)
+Total = rename(Total, Income_Group = worldbankincomegroup) 
 ```
 
 ```{r}
@@ -214,7 +223,8 @@ library(ggplot2)
 ```
 
 ```{r}
-hist1 <-ggplot(data=Total, aes(Total$region)) + 
+#Create histogram for total region distribution
+hist1 <-ggplot(data=Total, aes(Total$region)) +   
   geom_histogram(stat="count", fill= "red") + labs(x= "Regions", y= "Count", title= "Distribution of Region Counts" ) + theme(plot.title = element_text(hjust = 0.5))
 ```
 
@@ -223,6 +233,7 @@ hist1
 ```
 
 ```{r}
+#Create histogram for total income group distribution
 hist2 <-ggplot(data=Total, aes(Total$Income_Group)) + 
   geom_histogram(stat="count", fill = "blue") + labs(x= "Income Groups", y = "Count", title = "Distribution of Income Group Counts") + theme(plot.title = element_text(hjust = 0.5))
 ```
@@ -234,6 +245,9 @@ hist2
 
 
 ```{r}
+
+#Plot spendering per capita by adult mortality index
+
 plot1 <- ggplot(Total,aes( Spending_per_capita, Adult_mort)) + geom_point(aes(col=Income_Group)) + labs(y= "Adult Mortality Rate per 1000 people", x= "Government Healthcare Spending per Capita", title= "Adult Mortality Rate by Government Health Spending per Capita") + theme(plot.title = element_text(hjust = 0.5))
 ```
 
@@ -242,6 +256,7 @@ plot1
 ```
 
 ```{r}
+#plot GHE expenditure as a percentage of GDP by adult mortality index
 plot2 <- ggplot(Total,aes(GHE_percent, Adult_mort)) + geom_point(col= "red") + geom_smooth(method= "lm") + labs(y="Adult Mortality rate per 1000 people", x="Percent GDP Allocated to Government Health Expenditures", title = "Government Health Expenditures and Adult Mortality Rates") + theme(plot.title = element_text(hjust = 0.5))
 ```
 
@@ -250,6 +265,7 @@ plot2
 ```
 
 ```{r}
+#linear model of GHE by adult mortlity index
 lm1 <-lm(Adult_mort ~ GHE_percent, data = Total)
 ```
 
@@ -266,18 +282,479 @@ write.csv(Total,"Total.csv")
 
 
 #Health Indices
+#All of this is over all ages and all genders
 #Physical Burden Index: Necessary Information
+
+#HIV/AIDS
+#Deaths per 100,000. The year 2012 is being used because this is the most recent data available
+
+#Adding this in makes the count go down by like 50 :/
+#This might be the same situation where some counries are not monitored because the death rate is so low? But I don't know....not sure if I can include this if it takes out so many countries
+#OR maybe find a diferent data source
+```{r}
+HIV<- codes[grepl("HIV", codes$display), ] 
+```
+
+```{r}
+HIV_DF <- get_data("WHS2_138")
+
+
+```
+
+
+```{r}
+HIV_DF<-HIV_DF %>%
+  filter(year== "2012")
+```
+
+```{r}
+
+
+HIV_DF = rename(HIV_DF, HIV_AIDS = value) #rename columns
+```
+
+```{r}
+Total2 <- merge(Total, HIV_DF, by= "country") #merge mortality index into total df
+```
+
+```{r}
+Total2 <- subset(Total2, select = c(country, Income_Group, year.x, region.x, Spending_per_capita, GHE_percent, Adult_mort, HIV_AIDS))    #select desired columns
+```
+
+
+
+```{r}  
+Total2 = rename(Total2, year = year.x)   #rename
+Total2= rename(Total2, region= region.x)
+
+```
+
+
+
+```{r}
+hist3 <-ggplot(data=Total2, aes(Total2$region)) + 
+  geom_histogram(stat="count", fill = "blue") + labs(x= "Income Groups", y = "Count", title = "Distribution of Income Group Counts") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+hist3
+```
+
+
+
+
 #Ischemic Heart Disease/100,000:2017
 ```{r}
 IHD<- codes[grepl("[Hh]eart", codes$display), ] 
 ```
 
+#Deaths per 100,000 of IHD
 ```{r}
-IHD_df <- get_data("SA_0000001425")
+IHD_df <- get_data("SA_0000001444")
+```
+
+#2004 is the latest available data here :/
+```{r}
+IHD_df <- IHD_df %>%
+  filter(sex == "Both sexes")
 ```
 
 ```{r}
-IHD_2017 <- IHD_df %>%
-  filter(year == "2017")
+
+
+IHD_df = rename(IHD_df, IHD = value) #rename columns
 ```
+
+```{r}
+Total3 <- merge(Total2, IHD_df, by= "country") #merge mortality index into total df
+```
+
+```{r}
+Total3 <- subset(Total3, select = c(country, Income_Group, year.x, region.x, Spending_per_capita, GHE_percent, Adult_mort, HIV_AIDS, IHD))    #select desired columns
+```
+
+
+
+```{r}  
+Total3 = rename(Total3, year = year.x)   #rename
+Total3= rename(Total3, region= region.x)
+
+```
+
+
+#Neonatal
+```{r}
+Neonatal_Disorders<- codes[grepl("[Nn]eonatal", codes$display), ] 
+```
+
+```{r}
+Neonatal_Df <- get_data("WHOSIS_000003")
+```
+
+```{r}
+Neonatal_Df<- Neonatal_Df %>%
+  filter(sex == "Both sexes", year== "2016")
+```
+
+
+```{r}
+
+
+Neonatal_Df = rename(Neonatal_Df, Neonatal = value) #rename columns
+```
+
+```{r}
+Total4 <- merge(Total3, Neonatal_Df, by= "country") #merge mortality index into total df
+```
+
+```{r}
+Total4 <- subset(Total4, select = c(country, Income_Group, year.x, region.x, Spending_per_capita, GHE_percent, Adult_mort,HIV_AIDS, IHD, Neonatal))    #select desired columns
+```
+
+
+
+```{r}  
+Total4 = rename(Total4, year = year.x)   #rename
+Total4= rename(Total4, region= region.x)
+
+```
+
+
+#Stroke-- most recent data is from 2004
+```{r}
+Stroke<- codes[grepl("[Cc]erebrovascular", codes$display), ] 
+```
+
+```{r}
+Stroke_Df <- get_data("SA_0000001690")
+
+
+```
+
+```{r}
+Stroke_Df<- Stroke_Df %>%
+  filter(sex == "Both sexes")
+```
+
+```{r}
+
+
+Stroke_Df = rename(Stroke_Df, Stroke = value) #rename columns
+```
+
+```{r}
+Total5 <- merge(Total4, Stroke_Df, by= "country") #merge mortality index into total df
+```
+
+```{r}
+Total5 <- subset(Total5, select = c(country, Income_Group, year.x, region.x, Spending_per_capita, GHE_percent, Adult_mort, HIV_AIDS, IHD, Neonatal, Stroke))    #select desired columns
+```
+
+
+
+```{r}  
+Total5 = rename(Total5, year = year.x)   #rename
+Total5= rename(Total5, region= region.x)
+
+```
+
+
+
+
+#Lower Respiratory Disease-- TB, Pneumonia, Bronchitis (WHO doesnt have info on Pneumonia and Bronch so I just used TB), also TB among non HIV cases because HIV/AIDS is another indicator I will be using so I dont want to double count deaths. Would like to include pneumonia...found data at another source: https://ourworldindata.org/pneumonia
+```{r}
+Respiratory<- codes[grepl("tuberculosis", codes$display), ] 
+```
+
+```{r}
+Respiratory_Df_TB <- get_data("MDG_0000000017")
+
+
+```
+
+```{r}
+Respiratory_Df_TB<- Respiratory_Df_TB %>%
+  filter(year== "2016")
+```
+
+```{r}
+
+
+Respiratory_Df_TB = rename(Respiratory_Df_TB, TB_resp = value) #rename columns
+```
+
+```{r}
+Total6 <- merge(Total5, Respiratory_Df_TB, by= "country") #merge mortality index into total df
+```
+
+```{r}
+Total6 <- subset(Total6, select = c(country, Income_Group, year.x, region.x, Spending_per_capita, GHE_percent, Adult_mort,HIV_AIDS, IHD, Neonatal, Stroke, TB_resp))    #select desired columns
+```
+
+
+
+```{r}  
+Total6 = rename(Total6, year = year.x)   #rename
+Total6= rename(Total6, region= region.x)
+
+```
+
+
+
+
+
+#Diarrheal Diseases
+```{r}
+Diarrhoea<- codes[grepl("[Dd]iarrhoea", codes$display), ] 
+```
+
+```{r}
+Diarrhoea_DF <- get_data("WSH_10")
+
+
+```
+
+```{r}
+Diarrhoea_DF<- Diarrhoea_DF %>%
+  filter(year== "2016", sex== "Both sexes", agegroup== "All age groups (total)")
+```
+
+```{r}
+
+
+Diarrhoea_DF = rename(Diarrhoea_DF, Diarrhoea = value) #rename columns
+```
+
+```{r}
+Total7 <- merge(Total6, Diarrhoea_DF, by= "country") #merge mortality index into total df
+```
+
+```{r}
+Total7 <- subset(Total7, select = c(country, Income_Group, year.x, region.x, Spending_per_capita, GHE_percent, Adult_mort,HIV_AIDS, IHD, Neonatal, Stroke, TB_resp, Diarrhoea))    #select desired columns
+```
+
+
+
+```{r}  
+Total7 = rename(Total7, year = year.x)   #rename
+Total7= rename(Total7, region= region.x)
+
+```
+
+
+#Road Injuries
+```{r}
+Road_Injuries<- codes[grepl("[Rr]oad", codes$display), ] 
+```
+
+```{r}
+Road_Injuries_DF <- get_data("RS_198")
+
+
+```
+
+```{r}
+Road_Injuries_DF<-Road_Injuries_DF %>%
+  filter(year== "2016")
+```
+
+```{r}
+
+
+Road_Injuries_DF = rename(Road_Injuries_DF, Road_Injuries = value) #rename columns
+```
+
+```{r}
+Total8 <- merge(Total7, Road_Injuries_DF, by= "country") #merge mortality index into total df
+```
+
+```{r}
+Total8 <- subset(Total8, select = c(country, Income_Group, year.x, region.x, Spending_per_capita, GHE_percent, Adult_mort,HIV_AIDS, IHD, Neonatal, Stroke, TB_resp, Diarrhoea, Road_Injuries))    #select desired columns
+```
+
+
+
+```{r}  
+Total8 = rename(Total8, year = year.x)   #rename
+Total8= rename(Total8, region= region.x)
+
+```
+
+#Congenital Birth Defects 
+#Data is from WHO but not available in the health indiactors API
+#https://www.who.int/healthinfo/global_burden_disease/estimates/en/index3.html
+#rneo15= number of live births resulting in death from congential birth defects / 1000 live births
+#From 2016
+
+```{r}
+setwd("~/Documents/")
+childhood_estimates <- read.csv("childhood_estimates.csv")
+```
+
+```{r}
+childhood_estimates <- subset(childhood_estimates, select = c(level, year, rneo15, whoname))    #select desired columns
+```
+
+```{r}
+childhood_estimates = rename(childhood_estimates, country= whoname)   #rename
+childhood_estimates= rename(childhood_estimates, birth_defects = rneo15)
+```
+
+```{r}
+childhood_estimates<-childhood_estimates %>%
+  filter(year== "2016", level=="country")
+```
+
+```{r}
+Total9 <- merge(Total8, childhood_estimates, by= "country") #merge mortality index into total df
+```
+
+
+```{r}
+Total9 <- subset(Total9, select = c(country, Income_Group, year.x, region, Spending_per_capita, GHE_percent, Adult_mort,HIV_AIDS, IHD, Neonatal, Stroke, TB_resp, Diarrhoea, Road_Injuries, HIV_AIDS, birth_defects))    #select desired columns
+```
+
+
+
+```{r}  
+Total9 = rename(Total9, year = year.x)   #rename
+
+
+```
+
+
+
+#Malaria
+https://apps.who.int/iris/bitstream/handle/10665/259492/9789241565523-eng.pdf?sequence=1
+#90% of malaria deaths are from the WHO Africa region. Thus, many countries are not included in this because their malaria deaths are negligable. Most developed countries don't have any malaria deaths per year, and if they do they are often from travel. For this reason, if a first world country is not listed here, I am going to put 0 for malaria deaths, as first world countries in general don't really have any malaria disease burden. 
+
+
+https://ourworldindata.org/malaria#all-charts-preview
+#Deaths per 100,000 individuals
+#2016
+
+```{r}
+malaria <- read.csv("death-rates-malaria.csv")
+```
+
+```{r}
+malaria <- subset(malaria, select = c(Malaria, Year, Entity))    #select desired columns
+```
+
+```{r}
+malaria  = rename(malaria , country= Entity)   #rename
+malaria= rename(malaria, year = Year)
+```
+
+```{r}
+malaria <-malaria  %>%
+  filter(year== "2016")
+```
+
+```{r}
+Total10 <- merge(Total9, malaria, by= "country") #merge mortality index into total df
+```
+
+
+```{r}
+Total10 <- subset(Total10, select = c(country, Income_Group, year.x, region, Spending_per_capita, GHE_percent, Adult_mort,HIV_AIDS, IHD, Neonatal, Stroke, TB_resp, Diarrhoea, Road_Injuries, HIV_AIDS, birth_defects, Malaria))    #select desired columns
+```
+
+
+
+```{r}  
+Total10 = rename(Total10, year = year.x)   #rename
+
+
+```
+
+
+```{r}
+hist5 <-ggplot(data=Total10, aes(Total10$Income_Group)) + 
+  geom_histogram(stat="count", fill = "blue") + labs(x= "Income Groups", y = "Count", title = "Distribution of Income Group Counts") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+hist5
+```
+
+
+
+
+
+
+
+#Mental Health Disease Burden
+
+#Anxiety
+
+```{r}
+mental_health<- codes[grepl("", codes$display), ] 
+```
+
+```{r}
+Malaria_DF <- get_data("MDG_0000000016")
+```
+
+```{r}
+Malaria_DF2<-Malaria_DF2 %>%
+  filter(year== "2016")
+```
+
+
+
+
+#Healthcare Coverage Stuff
+
+```{r}
+coverage <- codes[grepl("[Cc]overage", codes$display), ]
+```
+
+
+```{r}
+coverage_Df<- get_data("GOE_Q001")
+```
+
+
+```{r}
+coverage_Df <- coverage_Df %>% 
+  filter(value == "Yes" | value == "No") 
+```
+
+```{r}
+no_coverage <- coverage_Df %>%
+  filter(Universal_Coverage == "No")
+```
+
+
+```{r}
+
+coverage_Df = rename(coverage_Df, Universal_Coverage = value) #rename columns
+```
+
+```{r}
+Total <- merge(Total, coverage_Df, by= "country") #merge mortality index into total df
+```
+
+```{r}
+Total <- subset(Total, select = c(country, Income_Group, year.x, region.x, Spending_per_capita, GHE_percent, Adult_mort, Universal_Coverage))    #select desired columns
+```
+
+
+
+
+```{r}  
+Total = rename(Total, year = year.x)   #rename
+Total= rename(Total, region= region.x)
+
+```
+
+```{r}
+hist3 <-ggplot(data=Total, aes(Total$Universal_Coverage)) + 
+  geom_histogram(stat="count", fill = "blue") + labs(x= "Universal Coverage", y = "Count", title = "Universal Coverage counts") + theme(plot.title = element_text(hjust = 0.5))
+```
+```{r}
+hist3
+```
+
 
