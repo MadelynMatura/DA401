@@ -383,6 +383,8 @@ Total3= rename(Total3, region= region.x)
 
 
 #Neonatal
+#per 1000 live births
+#2016
 ```{r}
 Neonatal_Disorders<- codes[grepl("[Nn]eonatal", codes$display), ] 
 ```
@@ -421,6 +423,7 @@ Total4= rename(Total4, region= region.x)
 
 
 #Stroke-- most recent data is from 2004
+#per 100,000
 ```{r}
 Stroke<- codes[grepl("[Cc]erebrovascular", codes$display), ] 
 ```
@@ -462,6 +465,7 @@ Total5= rename(Total5, region= region.x)
 
 
 #Lower Respiratory Disease-- TB, Pneumonia, Bronchitis (WHO doesnt have info on Pneumonia and Bronch so I just used TB), also TB among non HIV cases because HIV/AIDS is another indicator I will be using so I dont want to double count deaths. Would like to include pneumonia...found data at another source: https://ourworldindata.org/pneumonia
+#per 100,000
 ```{r}
 Respiratory<- codes[grepl("tuberculosis", codes$display), ] 
 ```
@@ -679,27 +683,144 @@ hist5
 ```
 
 
-
-
-
-
-
-#Mental Health Disease Burden
-
-#Anxiety
-
+#Pneumonia 
+#https://ourworldindata.org/pneumonia
 ```{r}
-mental_health<- codes[grepl("", codes$display), ] 
+pn <- read.csv("pneumonia-mortality-by-age.csv")
 ```
 
 ```{r}
-Malaria_DF <- get_data("MDG_0000000016")
+pn <- subset(pn, select = c(p1,p2, p3, p4, p5, Year, Entity))    #select desired columns
 ```
 
 ```{r}
-Malaria_DF2<-Malaria_DF2 %>%
+pn  = rename(pn , country= Entity)   #rename
+pn= rename(pn, year = Year)
+```
+
+```{r}
+pn<- pn  %>%
   filter(year== "2016")
 ```
+
+```{r}
+pn <- pn %>%
+  mutate(pneumonia = (p1+p2+p3+p4+p5))
+```
+
+
+
+```{r}
+Total11 <- merge(Total10, pn, by= "country") #merge mortality index into total df
+```
+
+
+```{r}
+Total11 <- subset(Total11, select = c(country, Income_Group, year.x, region, Spending_per_capita, GHE_percent, Adult_mort,HIV_AIDS, IHD, Neonatal, Stroke, TB_resp, Diarrhoea, Road_Injuries, birth_defects, Malaria, pneumonia))    #select desired columns
+```
+
+
+
+```{r}  
+Total11 = rename(Total11, year = year.x)   #rename
+
+
+```
+
+```{r}
+Total11$HIV_AIDS <- as.numeric(gsub("<", "", Total11$HIV_AIDS))
+
+Total11$TB_resp <- as.numeric(gsub("\\[.*?\\]", "", Total11$TB_resp))
+
+Total11$Diarrhoea <- as.numeric(gsub("\\[.*?\\]", "", Total11$Diarrhoea))
+
+```
+
+
+#Lower Respiratory Diseases
+
+```{r}
+Total12 <- Total11 %>%
+  mutate(Lower_Respiratory = (TB_resp+ pneumonia))
+```
+
+
+#Put all diseases on a scale of deaths per 100,000
+#Neonatal and congenital birth defects are per 1000 live births, so multiply this # by 100
+
+```{r}
+Total13 <- Total12 %>%
+  mutate(Neonatal_toscale = (Neonatal * 100))
+```
+
+```{r}
+Total14 <- Total13 %>%
+  mutate(Birth_Defects_toscale = birth_defects * 100)
+```
+
+#Population
+
+```{r}
+population<- codes[grepl("[Pp]opulation", codes$display), ] 
+```
+
+```{r}
+population_df <- get_data("WHS9_86")
+
+
+```
+
+```{r}
+population_df = rename(population_df , population_1000 = value)   #rename
+
+```
+
+```{r}
+population_df<- population_df %>%
+  filter(year== "2016")
+```
+
+
+
+
+```{r}
+Total15 <- merge(Total14, population_df, by= "country") #merge mortality index into total df
+```
+
+`
+```{r}
+Total15 <- subset(Total15, select = c(country, Income_Group, year.x, region.x, Spending_per_capita, GHE_percent, Adult_mort,HIV_AIDS, IHD, Neonatal, Stroke, TB_resp, Diarrhoea, Road_Injuries, birth_defects, Malaria, pneumonia, Lower_Respiratory, Neonatal_toscale, Birth_Defects_toscale, population_1000))    #select desired columns
+```
+
+```{r}
+
+Total15$population_1000 <- as.numeric(gsub(" ", "", Total15$population_1000))
+
+Total16 <- Total15 %>%
+  mutate(Population = (as.numeric(population_1000) * 1000))
+```
+
+
+
+
+```{r}  
+Total16 = rename(Total16, year = year.x)   #rename
+Total16 = rename(Total16, region= region.x)
+
+
+```
+
+
+
+
+
+
+#Mutate Disease Burden Index
+```{r}
+Total13 <- Total12 %>%
+  mutate(Disease_Burden_Index)
+```
+
 
 
 
