@@ -21,33 +21,8 @@ library(WHO)
 
 ```
 
-```{r}
-#look at all codes available (represent health indicators recorded by WHO)
-codes <- get_codes(extra= TRUE)
-head(codes)
-```
 
-```{r}
-View(codes)
-```
 
-```{r}
-#Exploratory searching for various indicators
-mental_health <- codes[grepl("[Mm]ental", codes$display), ]
-```
-
-```{r}
-mortality <- codes[grepl("[Mm]ortality", codes$display), ]
-```
-
-```{r}
-browseURL(codes$url[1])
-```
-
-```{r}
-#Create df of desired indicator
-df <- get_data("WHOSIS_000001")
-```
 
 ```{r}
 #Look at indicators with the word expenditures
@@ -62,53 +37,6 @@ GDP <- codes[grepl("GDP", codes$display), ]
 ```{r}
 #Create GDP dataframe
 GDP_df <- get_data("GHED_CHEGDP_SHA2011")
-```
-
-```{r}
-#Search for indicators with the word population
-population <- codes[grepl("population", codes$display), ]
-```
-
-```{r}
-#Searh for indicators with the words Health systems
-system_type <- codes[grepl("Health systems", codes$category), ]
-```
-
-```{r}
-public_df <- get_data("MEDS8021201")
-```
-
-```{r}
-private_df <- get_data("MEDS8021202")
-```
-
-```{r}
-population_df <- get_data("MEDS1_01_01") #not working because there is no URL associated with this code, so API does not work if there is no URL associated
-```
-
-```{r}
-GDP_df <- get_data("MEDS1_01_03")
-```
-
-```{r}
-well_being<- codes[grepl("index", codes$display), ]
-```
-
-```{r}
-service_coverage_df <- get_data("UHC_INDEX_REPORTED") 
-```
-
-```{r}
-composite_coverage_df <- get_data("cci2030")
-```
-
-```{r}
-sys<- codes[grepl("national health", codes$display), ] 
-```
-
-```{r}
-sys_df <- get_data("HSS_COMPREHENSIVEHEALTHPOLICY")
-
 ```
 
 ```{r}
@@ -615,7 +543,7 @@ Total9 <- merge(Total8, childhood_estimates, by= "country") #merge mortality ind
 
 
 ```{r}
-Total9 <- subset(Total9, select = c(country, Income_Group, year.x, region, Spending_per_capita, GHE_percent, Adult_mort,HIV_AIDS, IHD, Neonatal, Stroke, TB_resp, Diarrhoea, Road_Injuries, HIV_AIDS, birth_defects))    #select desired columns
+Total9 <- subset(Total9, select = c(country, Income_Group, year.x, region.x, Spending_per_capita, GHE_percent, Adult_mort,HIV_AIDS, IHD, Neonatal, Stroke, TB_resp, Diarrhoea, Road_Injuries, HIV_AIDS, birth_defects))    #select desired columns
 ```
 
 
@@ -661,13 +589,14 @@ Total10 <- merge(Total9, malaria, by= "country") #merge mortality index into tot
 
 
 ```{r}
-Total10 <- subset(Total10, select = c(country, Income_Group, year.x, region, Spending_per_capita, GHE_percent, Adult_mort,HIV_AIDS, IHD, Neonatal, Stroke, TB_resp, Diarrhoea, Road_Injuries, HIV_AIDS, birth_defects, Malaria))    #select desired columns
+Total10 <- subset(Total10, select = c(country, Income_Group, year.x, region.x, Spending_per_capita, GHE_percent, Adult_mort,HIV_AIDS, IHD, Neonatal, Stroke, TB_resp, Diarrhoea, Road_Injuries, HIV_AIDS, birth_defects, Malaria))    #select desired columns
 ```
 
 
 
 ```{r}  
 Total10 = rename(Total10, year = year.x)   #rename
+Total10 = rename(Total10, region= region.x)
 
 
 ```
@@ -811,16 +740,415 @@ Total16 = rename(Total16, region= region.x)
 ```
 
 
+#Need to get Diarrhea on an 100,000 scale (it is not just the crude # out of total population)
 
+```{r}
+Total17 <- Total16 %>%
+  mutate(Diarrhoea_toscale = ((Diarrhoea/Population)*100000))
+```
 
 
 
 #Mutate Disease Burden Index
 ```{r}
-Total13 <- Total12 %>%
-  mutate(Disease_Burden_Index)
+Total18 <- Total17 %>%
+  mutate(Disease_Burden_Index = ((IHD*1)+ (Neonatal_toscale*.9) +(Stroke*.8)+ (Lower_Respiratory*.7)+ (Diarrhoea_toscale*.6) + (Road_Injuries*.5) + (HIV_AIDS*.3) + (Birth_Defects_toscale *.2 + Malaria *.1))/9)
 ```
 
+
+#Scale index between 0 and 1
+
+```{r}
+Total19 <- Total18 %>%
+  mutate(Disease_Burden_Index_Scaled = (Disease_Burden_Index- min(Disease_Burden_Index))/((max(Disease_Burden_Index)-min(Disease_Burden_Index))))
+```
+
+```{r}
+write.csv(Total19, "Total19.csv")
+```
+
+
+```{r}
+hist6 <-ggplot(data=Total20, aes(Total20$Income_Group)) + 
+  geom_bar(stat="count", fill = "blue") + labs(x= "Income Groups", y = "Count")
+```
+
+```{r}
+hist6
+```
+
+```{r}
+
+hist7 <-ggplot(data=Total20, aes(Total20$region)) + 
+  geom_bar(stat="count", fill = "red") + labs(x= "Regions", y = "Count")
+
+```
+
+
+```{r}
+hist7
+```
+
+
+```{r}
+plot1 <- ggplot(Total20,aes(Spending_per_capita_log, Adult_mort)) + geom_point(aes(col=Income_Group)) + labs(y= "Adult Mortality Rate per 1000 people", x= "Government Healthcare Spending per Capita") + geom_smooth(method= "lm")
+```
+
+```{r}
+plot1
+```
+
+```{r}
+lm1 <- lm(Adult_mort ~ Spending_per_capita_log, data=Total20) 
+summary(lm1)
+```
+
+
+
+
+
+
+
+```{r}
+plot2 <- ggplot(Total20,aes(GHE_percent, Adult_mort)) + geom_point(aes(col=Income_Group)) + labs(y= "Adult Mortality Rate per 1000 people", x= "Government Healthcare Expenditures as a Percent of GDP") + geom_smooth(method= "lm")
+plot2
+```
+
+
+```{r}
+lm2 <- lm(Adult_mort ~ GHE_percent, data=Total20) 
+summary(lm2)
+```
+
+
+
+
+```{r}
+Total20 <- Total19 %>%
+  mutate(Spending_per_capita_log = log(Spending_per_capita))
+```
+
+
+#Put an Lm on this 
+
+```{r}
+plot2 <- ggplot(Total20,aes( Spending_per_capita_log, Disease_Burden_Index_Scaled)) + geom_point(aes(col=Income_Group)) + labs(y= "Disease Burden Index", x= "Log Government Healthcare Spending per Capita (USD)") + geom_smooth(method = "lm")
+```
+
+```{r}
+plot2
+```
+
+
+```{r}
+lm3 <- lm(Disease_Burden_Index_Scaled ~ GHE_percent, data=Total20) 
+summary(lm3)
+```
+
+```{r}
+plot5 <- ggplot(Total20, aes(Total20$Disease_Burden_Index_Scaled)) +geom_histogram(bins=10, fill="blue") +labs(x= "Disease Burden Index")
+plot5
+```
+
+
+```{r}
+plot5 <-ggplot(data=Total20, aes(Income_Group, Spending_per_capita)) + 
+  geom_bar(stat="summary", fill = "red") + labs(x= "Income Groups", y = "Healthacre Spending per Capita (USD)")
+plot5
+```
+
+
+```{r}
+plot6 <-ggplot(data=Total20, aes(region, Spending_per_capita)) + 
+  geom_bar(stat="summary", fill = "red") + labs(x= "Regions", y = "Healthacre Spending per Capita (USD)")
+plot6
+```
+
+```{r}
+plot7 <-ggplot(data=Total20, aes(region, Disease_Burden_Index_Scaled)) + 
+  geom_bar(stat="summary", fill = "purple") + labs(x= "Regions", y = "Healthacre Spending per Capita (USD)")
+plot7
+```
+
+
+
+
+```{r}
+plot8 <-ggplot(data=Total20, aes(Income_Group, Disease_Burden_Index_Scaled)) + 
+  geom_bar(stat="summary", fill = "purple") + labs(x= "Regions", y = "Healthacre Spending per Capita (USD)")
+plot8
+```
+
+
+#Filtering by income group and region
+
+```{r}
+Total21 <- Total20 %>%
+  filter(Income_Group== "High-income")
+```
+
+```{r}
+plot6 <- ggplot(Total21,aes( Spending_per_capita_log, Disease_Burden_Index_Scaled)) + geom_point(aes(col=region)) + labs(y= "Disease Burden Index", x= "Log Government Healthcare Spending per Capita (USD)") + geom_smooth(method = "lm")
+plot6
+```
+
+```{r}
+lm4 <- lm(Disease_Burden_Index_Scaled ~ Spending_per_capita_log + region, data=Total21) 
+summary(lm4)
+```
+
+
+```{r}
+Total22 <- Total20 %>%
+  filter(Income_Group== "Lower-middle-income")
+```
+
+```{r}
+plot6 <- ggplot(Total22,aes( Spending_per_capita_log, Disease_Burden_Index_Scaled)) + geom_point(aes(col=region)) + labs(y= "Disease Burden Index", x= "Log Government Healthcare Spending per Capita (USD)") + geom_smooth(method = "lm")
+plot6
+```
+
+```{r}
+lm5 <- lm(Disease_Burden_Index_Scaled ~ Spending_per_capita_log + region, data=Total22) 
+summary(lm5)
+```
+
+```{r}
+Total23 <- Total20 %>%
+  filter(Income_Group== "Low-income")
+```
+
+```{r}
+plot6 <- ggplot(Total23,aes( Spending_per_capita_log, Disease_Burden_Index_Scaled)) + geom_point(aes(col=region)) + labs(y= "Disease Burden Index", x= "Log Government Healthcare Spending per Capita (USD)") + geom_smooth(method = "lm")
+plot6
+```
+
+```{r}
+lm6 <- lm(Disease_Burden_Index_Scaled ~ Spending_per_capita_log + region, data=Total23) 
+summary(lm6)
+```
+
+```{r}
+Total24 <- Total20 %>%
+  filter(Income_Group== "Upper-middle-income")
+```
+
+```{r}
+plot6 <- ggplot(Total24,aes( Spending_per_capita_log, Disease_Burden_Index_Scaled)) + geom_point(aes(col=region)) + labs(y= "Disease Burden Index", x= "Log Government Healthcare Spending per Capita (USD)") + geom_smooth(method = "lm")
+plot6
+```
+
+
+```{r}
+lm7 <- lm(Disease_Burden_Index_Scaled ~ Spending_per_capita_log + region, data=Total24) 
+summary(lm7)
+```
+
+
+
+```{r}
+Total25 <- Total20 %>%
+  filter(region == "Americas")
+```
+
+
+
+```{r}
+plot7 <- ggplot(Total25,aes( Spending_per_capita_log, Disease_Burden_Index_Scaled)) + geom_point(aes(col=Income_Group)) + labs(y= "Disease Burden Index", x= "Log Government Healthcare Spending per Capita (USD)") + geom_smooth(method = "lm")
+plot7
+```
+
+
+```{r}
+lm8 <- lm(Disease_Burden_Index_Scaled ~ Spending_per_capita_log + Income_Group, data=Total25) 
+summary(lm8)
+```
+
+```{r}
+Total26 <- Total20 %>%
+  filter(region == "Europe")
+```
+
+
+
+```{r}
+plot7 <- ggplot(Total26,aes( Spending_per_capita_log, Disease_Burden_Index_Scaled)) + geom_point(aes(col=Income_Group)) + labs(y= "Disease Burden Index", x= "Log Government Healthcare Spending per Capita (USD)") + geom_smooth(method = "lm")
+plot7
+```
+
+
+
+```{r}
+lm8 <- lm(Disease_Burden_Index_Scaled ~ Spending_per_capita_log + Income_Group, data=Total26) 
+summary(lm8)
+```
+
+
+```{r}
+Total27 <- Total20 %>%
+  filter(region == "Africa")
+```
+
+
+
+```{r}
+plot7 <- ggplot(Total27,aes( Spending_per_capita_log, Disease_Burden_Index_Scaled)) + geom_point(aes(col=Income_Group)) + labs(y= "Disease Burden Index", x= "Log Government Healthcare Spending per Capita (USD)") + geom_smooth(method = "lm")
+plot7
+```
+
+
+```{r}
+lm8 <- lm(Disease_Burden_Index_Scaled ~ Spending_per_capita_log + Income_Group, data=Total27) 
+summary(lm8)
+```
+
+#Only 7 observations in eastern med so ...not legit
+#Rule of thumb: if there are over 10 observations then I will do the regression
+```{r}
+Total28 <- Total20 %>%
+  filter(region == "Eastern Mediterranean")
+```
+
+
+#Western Pacific...only 10 observations so kind of iffy
+```{r}
+Total29 <- Total20 %>%
+  filter(region == "Western Pacific")
+```
+
+```{r}
+plot7 <- ggplot(Total29,aes( Spending_per_capita_log, Disease_Burden_Index_Scaled)) + geom_point(aes(col=Income_Group)) + labs(y= "Disease Burden Index", x= "Log Government Healthcare Spending per Capita (USD)") + geom_smooth(method = "lm")
+plot7
+```
+
+```{r}
+lm9 <- lm(Disease_Burden_Index_Scaled ~ Spending_per_capita_log + Income_Group, data=Total29) 
+summary(lm9)
+```
+
+```{r}
+Total30 <- Total20 %>%
+  filter(region == "South-East Asia")
+```
+
+```{r}
+lm9 <- lm(Disease_Burden_Index_Scaled ~ Spending_per_capita_log + Income_Group, data=Total30) 
+summary(lm9)
+```
+
+
+#Searching for indactors of healthcare systems (private vs publics sector or universal)
+
+
+```{r}
+national<- codes[grepl("UHC", codes$display), ] 
+```
+
+```{r}
+national_df <- get_data("UHC_INDEX_REPORTED")
+
+
+```
+
+
+```{r}
+HIV_DF<-HIV_DF %>%
+  filter(year== "2012")
+```
+
+```{r}
+
+
+HIV_DF = rename(HIV_DF, HIV_AIDS = value) #rename columns
+```
+
+```{r}
+Total2 <- merge(Total, HIV_DF, by= "country") #merge mortality index into total df
+```
+
+```{r}
+Total2 <- subset(Total2, select = c(country, Income_Group, year.x, region.x, Spending_per_capita, GHE_percent, Adult_mort, HIV_AIDS))    #select desired columns
+```
+
+
+
+```{r}  
+Total2 = rename(Total2, year = year.x)   #rename
+Total2= rename(Total2, region= region.x)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+plot6 <- ggplot(Total21,aes( Spending_per_capita_log, Disease_Burden_Index_Scaled)) + geom_point() + labs(y= "Disease Burden Index", x= "Log Government Healthcare Spending per Capita (USD)") + geom_smooth(method = "lm")
+plot6
+```
+
+
+```{r}
+plot3 <- ggplot(Total20,aes(Income_Group, Spending_per_capita)) + geom_bar(stat = "summary") + labs(y= "Disease Burden Index", x= "Log Government Healthcare Spending per Capita (USD)") 
+```
+
+
+```{r}
+lm4 <- lm(Disease_Burden_Index_Scaled ~ GHE_percent + Income_Group + region, data=Total20) 
+summary(lm4)
+```
+
+
+
+
+
+
+```{r}
+install.packages("Hmisc")
+library("Hmisc")
+```
+
+
+```{r}
+Total21 <- subset(Total20, select = c(, Income_Group, year.x, region, Spending_per_capita, GHE_percent, Adult_mort,HIV_AIDS, IHD, Neonatal, Stroke, TB_resp, Diarrhoea, Road_Injuries, birth_defects, Malaria, pneumonia))    #select desired columns
+```
+
+
+
+```{r}
+Total20.cor = cor(Total20)
+```
+
+
+```{r}
+Total20.rcorr = rcorr(as.matrix(Total20))
+mydata.rcorr
+```
+
+
+
+
+```{r}
+install.packages("corrplot")
+library(corrplot)
+```
+
+```{r}
+library(corrplot)
+corrplot(Total20.cor)
+```
 
 
 
