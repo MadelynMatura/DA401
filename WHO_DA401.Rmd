@@ -804,25 +804,6 @@ summary(lm1)
 ```
 
 
-
-
-
-
-
-```{r}
-plot2 <- ggplot(Total20,aes(GHE_percent, Adult_mort)) + geom_point(aes(col=Income_Group)) + labs(y= "Adult Mortality Rate per 1000 people", x= "Government Healthcare Expenditures as a Percent of GDP") + geom_smooth(method= "lm")
-plot2
-```
-
-
-```{r}
-lm2 <- lm(Adult_mort ~ GHE_percent, data=Total20) 
-summary(lm2)
-```
-
-
-
-
 ```{r}
 Total20 <- Total19 %>%
   mutate(Spending_per_capita_log = log(Spending_per_capita))
@@ -1045,70 +1026,74 @@ national<- codes[grepl("UHC", codes$display), ]
 ```
 
 ```{r}
-national_df <- get_data("UHC_INDEX_REPORTED")
+national_df <- get_data("HSS_UHCLEGISLATION")
 
 
 ```
 
 
+
 ```{r}
-HIV_DF<-HIV_DF %>%
-  filter(year== "2012")
+national_df = rename(national_df, Universal_Legislation = value) #rename columns
 ```
 
 ```{r}
-
-
-HIV_DF = rename(HIV_DF, HIV_AIDS = value) #rename columns
+Total31<- merge(Total20 , national_df, by= "country") #merge mortality index into total df
 ```
 
-```{r}
-Total2 <- merge(Total, HIV_DF, by= "country") #merge mortality index into total df
-```
 
 ```{r}
-Total2 <- subset(Total2, select = c(country, Income_Group, year.x, region.x, Spending_per_capita, GHE_percent, Adult_mort, HIV_AIDS))    #select desired columns
+Total31 <- subset(Total31, select = c(country, Income_Group, year.x, region.x, Spending_per_capita, GHE_percent, Adult_mort,HIV_AIDS, IHD, Neonatal, Stroke, TB_resp, Diarrhoea, Road_Injuries, birth_defects, Malaria, pneumonia, Lower_Respiratory, Neonatal_toscale, Birth_Defects_toscale, population_1000, Disease_Burden_Index_Scaled, Spending_per_capita_log, Universal_Legislation))    #select desired columns
 ```
 
 
 
 ```{r}  
-Total2 = rename(Total2, year = year.x)   #rename
-Total2= rename(Total2, region= region.x)
+Total31 = rename(Total31, year = year.x)   #rename
+Total31 = rename(Total31, region = region.x) 
+
 
 ```
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 ```{r}
-plot6 <- ggplot(Total21,aes( Spending_per_capita_log, Disease_Burden_Index_Scaled)) + geom_point() + labs(y= "Disease Burden Index", x= "Log Government Healthcare Spending per Capita (USD)") + geom_smooth(method = "lm")
+plot6 <- ggplot(Total31,aes( Spending_per_capita_log, Disease_Burden_Index_Scaled)) + geom_point(aes(col=Universal_Legislation)) + labs(y= "Disease Burden Index", x= "Log Government Healthcare Spending per Capita (USD)") + geom_smooth(method = "lm")
 plot6
 ```
 
+```{r}
+lm9 <- lm(Disease_Burden_Index_Scaled ~ Spending_per_capita_log+ region , data=Total31) 
+summary(lm9)
+```
 
 ```{r}
-plot3 <- ggplot(Total20,aes(Income_Group, Spending_per_capita)) + geom_bar(stat = "summary") + labs(y= "Disease Burden Index", x= "Log Government Healthcare Spending per Capita (USD)") 
+plot5 <-ggplot(data=Total31, aes(Universal_Legislation, Spending_per_capita)) + 
+  geom_bar(stat="summary", fill = "red") + labs(x= "Passed Universal Healthcare Legislation", y = "Healthacre Spending per Capita (USD)")
+plot5
+```
+
+
+
+
+
+```{r}
+plot5 <-ggplot(data=Total31, aes(Universal_Legislation, Disease_Burden_Index_Scaled)) + 
+  geom_bar(stat="summary", fill = "red") + labs(x= "Passed Universal Healthcare Legislation", y = "Disease Burden Index")
+plot5
 ```
 
 
 ```{r}
-lm4 <- lm(Disease_Burden_Index_Scaled ~ GHE_percent + Income_Group + region, data=Total20) 
-summary(lm4)
+plot5 <-ggplot(data=Total31, aes(Universal_Legislation, GHE_percent)) + 
+  geom_bar(stat="summary", fill = "red") + labs(x= "Passed Universal Healthcare Legislation", y = "Government Healthcare Spending as a Percent of GDP")
+plot5
 ```
+
+
+
+
 
 
 
@@ -1152,58 +1137,25 @@ corrplot(Total20.cor)
 
 
 
+library(ggplot2)
+library(ggcorrplot)
 
-#Healthcare Coverage Stuff
+# Correlation matrix
+data(mtcars)
+corr <- round(cor(mtcars), 1)
 
-```{r}
-coverage <- codes[grepl("[Cc]overage", codes$display), ]
-```
-
-
-```{r}
-coverage_Df<- get_data("GOE_Q001")
-```
-
-
-```{r}
-coverage_Df <- coverage_Df %>% 
-  filter(value == "Yes" | value == "No") 
-```
-
-```{r}
-no_coverage <- coverage_Df %>%
-  filter(Universal_Coverage == "No")
-```
-
-
-```{r}
-
-coverage_Df = rename(coverage_Df, Universal_Coverage = value) #rename columns
-```
-
-```{r}
-Total <- merge(Total, coverage_Df, by= "country") #merge mortality index into total df
-```
-
-```{r}
-Total <- subset(Total, select = c(country, Income_Group, year.x, region.x, Spending_per_capita, GHE_percent, Adult_mort, Universal_Coverage))    #select desired columns
-```
+# Plot
+ggcorrplot(corr, hc.order = TRUE, 
+           type = "lower", 
+           lab = TRUE, 
+           lab_size = 3, 
+           method="circle", 
+           colors = c("tomato2", "white", "springgreen3"), 
+           title="Correlogram of mtcars", 
+           ggtheme=theme_bw)
 
 
 
 
-```{r}  
-Total = rename(Total, year = year.x)   #rename
-Total= rename(Total, region= region.x)
-
-```
-
-```{r}
-hist3 <-ggplot(data=Total, aes(Total$Universal_Coverage)) + 
-  geom_histogram(stat="count", fill = "blue") + labs(x= "Universal Coverage", y = "Count", title = "Universal Coverage counts") + theme(plot.title = element_text(hjust = 0.5))
-```
-```{r}
-hist3
-```
 
 
