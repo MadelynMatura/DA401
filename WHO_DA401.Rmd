@@ -150,63 +150,6 @@ Total = rename(Total, Income_Group = worldbankincomegroup)
 library(ggplot2)
 ```
 
-```{r}
-#Create histogram for total region distribution
-hist1 <-ggplot(data=Total, aes(Total$region)) +   
-  geom_histogram(stat="count", fill= "red") + labs(x= "Regions", y= "Count", title= "Distribution of Region Counts" ) + theme(plot.title = element_text(hjust = 0.5))
-```
-
-```{r}
-hist1
-```
-
-```{r}
-#Create histogram for total income group distribution
-hist2 <-ggplot(data=Total, aes(Total$Income_Group)) + 
-  geom_histogram(stat="count", fill = "blue") + labs(x= "Income Groups", y = "Count", title = "Distribution of Income Group Counts") + theme(plot.title = element_text(hjust = 0.5))
-```
-
-```{r}
-hist2
-```
-
-
-
-```{r}
-
-#Plot spendering per capita by adult mortality index
-
-plot1 <- ggplot(Total,aes( Spending_per_capita, Adult_mort)) + geom_point(aes(col=Income_Group)) + labs(y= "Adult Mortality Rate per 1000 people", x= "Government Healthcare Spending per Capita", title= "Adult Mortality Rate by Government Health Spending per Capita") + theme(plot.title = element_text(hjust = 0.5))
-```
-
-```{r}
-plot1
-```
-
-```{r}
-#plot GHE expenditure as a percentage of GDP by adult mortality index
-plot2 <- ggplot(Total,aes(GHE_percent, Adult_mort)) + geom_point(col= "red") + geom_smooth(method= "lm") + labs(y="Adult Mortality rate per 1000 people", x="Percent GDP Allocated to Government Health Expenditures", title = "Government Health Expenditures and Adult Mortality Rates") + theme(plot.title = element_text(hjust = 0.5))
-```
-
-```{r}
-plot2
-```
-
-```{r}
-#linear model of GHE by adult mortlity index
-lm1 <-lm(Adult_mort ~ GHE_percent, data = Total)
-```
-
-```{r}
-summary(lm1)
-```
-
-
-
-```{r}
-write.csv(Total,"Total.csv")
-```
-
 
 
 #Health Indices
@@ -255,17 +198,6 @@ Total2 <- subset(Total2, select = c(country, Income_Group, year.x, region.x, Spe
 Total2 = rename(Total2, year = year.x)   #rename
 Total2= rename(Total2, region= region.x)
 
-```
-
-
-
-```{r}
-hist3 <-ggplot(data=Total2, aes(Total2$region)) + 
-  geom_histogram(stat="count", fill = "blue") + labs(x= "Income Groups", y = "Count", title = "Distribution of Income Group Counts") + theme(plot.title = element_text(hjust = 0.5))
-```
-
-```{r}
-hist3
 ```
 
 
@@ -602,14 +534,6 @@ Total10 = rename(Total10, region= region.x)
 ```
 
 
-```{r}
-hist5 <-ggplot(data=Total10, aes(Total10$Income_Group)) + 
-  geom_histogram(stat="count", fill = "blue") + labs(x= "Income Groups", y = "Count", title = "Distribution of Income Group Counts") + theme(plot.title = element_text(hjust = 0.5))
-```
-
-```{r}
-hist5
-```
 
 
 #Pneumonia 
@@ -769,25 +693,38 @@ write.csv(Total19, "Total19.csv")
 
 
 ```{r}
-hist6 <-ggplot(data=Total20, aes(Total20$Income_Group)) + 
-  geom_bar(stat="count", fill = "blue") + labs(x= "Income Groups", y = "Count")
-```
-
-```{r}
-hist6
-```
-
-```{r}
-
-hist7 <-ggplot(data=Total20, aes(Total20$region)) + 
-  geom_bar(stat="count", fill = "red") + labs(x= "Regions", y = "Count")
-
+TotalB <- Total20 %>%
+  group_by(Income_Group)%>%
+  tally()
 ```
 
 
 ```{r}
-hist7
+plot5 <-ggplot(data=TotalB, aes(x= reorder(Income_Group, n), y= n)) + 
+  geom_bar(stat="summary", fill = "red") + labs(x= "Income Groups", y = "Count")
+plot5
 ```
+
+
+```{r}
+Total35 <- Total20 %>%
+  filter(region == "Western Pacific")
+```
+
+
+```{r}
+TotalA <- Total20 %>%
+  group_by(region)%>%
+  tally()
+```
+
+```{r}
+plot5 <-ggplot(data=TotalA, aes(x= reorder(region, n), y= n)) + 
+  geom_bar(stat="summary", fill = "red") + labs(x= "Regions", y = "Count")
+plot5
+```
+
+
 
 
 ```{r}
@@ -813,12 +750,23 @@ Total20 <- Total19 %>%
 #Put an Lm on this 
 
 ```{r}
-plot2 <- ggplot(Total20,aes( Spending_per_capita_log, Disease_Burden_Index_Scaled)) + geom_point(aes(col=Income_Group)) + labs(y= "Disease Burden Index", x= "Log Government Healthcare Spending per Capita (USD)") + geom_smooth(method = "lm")
+plot2 <- ggplot(Total20,aes( Spending_per_capita_log, Disease_Burden_Index_Scaled)) + geom_point(aes(col=region)) + labs(y= "Disease Burden Index", x= "Log Government Healthcare Spending per Capita (USD)") + geom_smooth(method = "lm")
 ```
 
 ```{r}
 plot2
 ```
+
+```{r}
+#test <- chisq.test(table(Total20$Income_Group, Total20$region))
+#test
+
+test2 <- fisher.test(Total20$Income_Group, Total20$region)
+test2
+
+```
+
+
 
 
 ```{r}
@@ -826,28 +774,68 @@ lm3 <- lm(Disease_Burden_Index_Scaled ~ GHE_percent, data=Total20)
 summary(lm3)
 ```
 
+
+```{r}
+plot5 <- ggplot(Total20, aes(Total20$Spending_per_capita_log)) +geom_histogram(bins=7, fill="red") +labs(x= "Log Healthcare Spending per Capita (USD)")
+plot5
+```
+
+
+
 ```{r}
 plot5 <- ggplot(Total20, aes(Total20$Disease_Burden_Index_Scaled)) +geom_histogram(bins=10, fill="blue") +labs(x= "Disease Burden Index")
 plot5
 ```
 
 
+
+
+
 ```{r}
-plot5 <-ggplot(data=Total20, aes(Income_Group, Spending_per_capita)) + 
+plot5 <-ggplot(data=Total20, aes(x= reorder(Income_Group, Spending_per_capita), y= Spending_per_capita)) + 
   geom_bar(stat="summary", fill = "red") + labs(x= "Income Groups", y = "Healthacre Spending per Capita (USD)")
 plot5
 ```
 
+```{r}
+Sum <- Total20 %>%
+  group_by(Income_Group)%>% summarise(mean1= mean(Spending_per_capita))
+```
 
 ```{r}
-plot6 <-ggplot(data=Total20, aes(region, Spending_per_capita)) + 
+Sum <- Total20 %>%
+  group_by(region)%>% summarise(mean1= mean(Spending_per_capita))
+```
+
+
+
+
+
+```{r}
+anova_two_way <- aov(Spending_per_capita~Income_Group, data = Total20)
+summary(anova_two_way)
+
+TukeyHSD(anova_two_way)
+```
+
+
+```{r}
+anova_two_way <- aov(Spending_per_capita~region, data = Total20)
+summary(anova_two_way)
+
+TukeyHSD(anova_two_way)
+```
+
+
+```{r}
+plot6 <-ggplot(data=Total20, aes(x=reorder(region,Spending_per_capita), Spending_per_capita)) + 
   geom_bar(stat="summary", fill = "red") + labs(x= "Regions", y = "Healthacre Spending per Capita (USD)")
 plot6
 ```
 
 ```{r}
-plot7 <-ggplot(data=Total20, aes(region, Disease_Burden_Index_Scaled)) + 
-  geom_bar(stat="summary", fill = "purple") + labs(x= "Regions", y = "Healthacre Spending per Capita (USD)")
+plot7 <-ggplot(data=Total20, aes(x=reorder(region, Disease_Burden_Index_Scaled), Disease_Burden_Index_Scaled)) + 
+  geom_bar(stat="summary", fill = "blue") + labs(x= "Regions", y = "Disease Burden Index")
 plot7
 ```
 
@@ -855,8 +843,8 @@ plot7
 
 
 ```{r}
-plot8 <-ggplot(data=Total20, aes(Income_Group, Disease_Burden_Index_Scaled)) + 
-  geom_bar(stat="summary", fill = "purple") + labs(x= "Regions", y = "Healthacre Spending per Capita (USD)")
+plot8 <-ggplot(data=Total20, aes(x=reorder(Income_Group,-Disease_Burden_Index_Scaled), Disease_Burden_Index_Scaled)) + 
+  geom_bar(stat="summary", fill = "blue") + labs(x= "Income Groups", y = "Disease Burden Index")
 plot8
 ```
 
@@ -1069,34 +1057,222 @@ summary(lm9)
 ```
 
 ```{r}
-plot5 <-ggplot(data=Total31, aes(Universal_Legislation, Spending_per_capita)) + 
-  geom_bar(stat="summary", fill = "red") + labs(x= "Passed Universal Healthcare Legislation", y = "Healthacre Spending per Capita (USD)")
-plot5
+hist7 <-ggplot(data=Total20, aes(Total31$Universal_Legislation)) + 
+  geom_bar(stat="count", fill = "blue") + labs(x= "Passed Universal Healthcare Legislation", y = "Count")
+hist7
 ```
+
+
+```{r}
+TotalC <- Total31 %>%
+  group_by(Universal_Legislation)%>%
+  tally()
+```
+
+
+
+
+```{r}
+p10 <- ggplot(Total31, aes(x = Universal_Legislation, y = Spending_per_capita)) +
+        geom_boxplot(fill= "light blue") + labs (x= "Passed Universal Healthcare Legislation",  y= "Healthcare Spending per Capita (USD)")
+        
+
+p10
+
+```
+
+
+```{r}
+t.test(Spending_per_capita ~ Universal_Legislation, data = Total31)
+```
+
+
+```{r}
+TotalD <- Total31 %>%
+  filter(Universal_Legislation == "Yes")
+
+range(TotalD$Adult_mort)
+```
+
+
+
+```{r}
+TotalD <- Total31 %>%
+  filter(Universal_Legislation == "No")
+
+range(TotalD$Adult_mort)
+```
+
+```{r}
+TotalD <- Total31 %>%
+  filter(Adult_mort >400, Universal_Legislation == "No")
+```
+
+
+#Africa Dataset
+```{r}
+Total_Africa <- Total31 %>%
+  filter(region== "Africa")
+
+mean(Total_Africa$Disease_Burden_Index_Scaled)
+
+Total_Africa_count <- Total_Africa %>%
+  group_by(Universal_Legislation)%>%
+  tally()
+  
+```
+
+
+```{r}
+Total_Africa_mean <- Total_Africa %>%
+  filter(Universal_Legislation== "No")
+mean(Total_Africa_mean$Disease_Burden_Index_Scaled)
+```
+
+
+```{r}
+Total_Africa_out <- Total_Africa %>%
+  filter(Universal_Legislation == "No", Disease_Burden_Index_Scaled < .3)
+```
+
+
+
+```{r}
+t.test(Disease_Burden_Index_Scaled ~ Universal_Legislation, data = Total_Africa)
+```
+
+
+```{r}
+p10 <- ggplot(Total_Africa, aes(x = Universal_Legislation, y = Disease_Burden_Index_Scaled)) +
+        geom_boxplot(fill= "red") + labs (x= "Passed Universal Healthcare Legislation in African Countries",  y= "Disease Burden Index in African Countries")
+        
+
+p10
+
+```
+
+
+#Europe Dataset
+```{r}
+Total_Europe <- Total31 %>%
+  filter(region== "Europe")
+
+mean(Total_Europe$Disease_Burden_Index_Scaled)
+  
+Total_Europe_count <- Total_Europe %>%
+  group_by(Universal_Legislation)%>%
+  tally()
+```
+
+```{r}
+Total_Europe_mean <- Total_Europe %>%
+  filter(Universal_Legislation== "Yes")
+mean(Total_Europe_mean$Disease_Burden_Index_Scaled)
+```
+
+```{r}
+t.test(Disease_Burden_Index_Scaled ~ Universal_Legislation, data = Total_Europe)
+```
+
+```{r}
+p10 <- ggplot(Total_Europe, aes(x = Universal_Legislation, y = Disease_Burden_Index_Scaled)) +
+        geom_boxplot(fill= "blue") + labs (x= "Passed Universal Healthcare Legislation in European Countries",  y= "Disease Burden Index in European Countries")
+        
+
+p10
+
+```
+
+```{r}
+Total_Europe_out <- Total_Europe %>%
+  filter(Universal_Legislation == "Yes", Disease_Burden_Index_Scaled > .3)
+```
+
+#Americas Dataset
+```{r}
+Total_Americas <- Total31 %>%
+  filter(region== "Americas")
+
+mean(Total_Americas$Disease_Burden_Index_Scaled)
+  
+```
+
+
+
+
+```{r}
+p10 <- ggplot(Total31, aes(x = Universal_Legislation, y = Disease_Burden_Index_Scaled)) +
+        geom_boxplot(fill= "light blue") + labs (x= "Passed Universal Healthcare Legislation",  y= "Disease Burden Index")
+        
+
+p10
+
+```
+
+
+```{r}
+t.test(Disease_Burden_Index_Scaled ~ Universal_Legislation, data = Total31)
+```
+
+
+
+
+```{r}
+Total_LowIncome <- Total31 %>%
+  filter(Income_Group== "Low-income" | Income_Group == "Lower-middle-income")
+
+mean(Total_LowIncome$Disease_Burden_Index_Scaled)
+```
+
+```{r}
+p10 <- ggplot(Total_LowIncome, aes(x = Universal_Legislation, y = Disease_Burden_Index_Scaled)) +
+        geom_boxplot(fill= "light blue") + labs (x= "Passed Universal Healthcare Legislation",  y= "Disease Burden Index")
+        
+
+p10
+
+```
+
+
+
+```{r}
+Total_HighIncome <- Total31 %>%
+  filter(Income_Group == "High-income" | Income_Group=="Upper-middle-income")
+
+mean(Total_HighIncome$Disease_Burden_Index_Scaled)
+```
+
+
+```{r}
+p10 <- ggplot(Total_HighIncome, aes(x = Universal_Legislation, y = Disease_Burden_Index_Scaled)) +
+        geom_boxplot(fill= "light blue") + labs (x= "Passed Universal Healthcare Legislation",  y= "Disease Burden Index")
+        
+
+p10
+
+```
+
+
+
+
+
 
 
 
 
 
 ```{r}
-plot5 <-ggplot(data=Total31, aes(Universal_Legislation, Disease_Burden_Index_Scaled)) + 
-  geom_bar(stat="summary", fill = "red") + labs(x= "Passed Universal Healthcare Legislation", y = "Disease Burden Index")
-plot5
-```
+p10 <- ggplot(Total31, aes(x = Universal_Legislation, y = Adult_mort)) +
+        geom_boxplot(fill= "light blue") + labs (x= "Passed Universal Healthcare Legislation",  y= "Adult Mortality Rate (per 1000 people in 2016)")
+        
 
+p10
+
+```
 
 ```{r}
-plot5 <-ggplot(data=Total31, aes(Universal_Legislation, GHE_percent)) + 
-  geom_bar(stat="summary", fill = "red") + labs(x= "Passed Universal Healthcare Legislation", y = "Government Healthcare Spending as a Percent of GDP")
-plot5
+t.test(Adult_mort ~ Universal_Legislation, data = Total31)
 ```
-
-
-
-
-
-
-
 
 
 
