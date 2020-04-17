@@ -25,6 +25,7 @@ The Global Health Observatory. (n.d.) World Health Organization. Retrieved March
 
 Roser, M. & Ritchie H. (2019, October). Malaria. Our World in Data. Retrieved April 3, 2020		 from https://ourworldindata.org/malaria#all-charts-preview
 
+WHO-MCEE estimates for child causes of death 2000-2016. (2018, Feb). The World Health	Organization. Retrieved April 1, 2020 from https://www.who.int/healthinfo/global_burden_disease/estimates/en/index3.html
 
 
 
